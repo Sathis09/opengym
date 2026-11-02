@@ -27,6 +27,11 @@ import Admin from './views/Admin.jsx'
 import Coach from './views/Coach.jsx'
 import CoachIntake from './views/CoachIntake.jsx'
 import CoachProposal from './views/CoachProposal.jsx'
+import Profile from './views/Profile.jsx'
+import AISettings from './views/AISettings.jsx'
+import FirstSyncSheet from './components/FirstSyncSheet.jsx'
+import { useAI } from './store/useAI.js'
+import { MOBILE } from './lib/mobile.js'
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
@@ -84,7 +89,10 @@ function Shell() {
               <Route path="/coach" element={<Coach />} />
               <Route path="/coach/intake" element={<CoachIntake />} />
               <Route path="/coach/proposal" element={<CoachProposal />} />
-              <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
+              {/* Gym Plus (mobile build): Google backup + bring-your-own-key AI settings */}
+              {MOBILE && <Route path="/profile" element={<Profile />} />}
+              {MOBILE && <Route path="/profile/ai" element={<AISettings />} />}
+              <Route path="/admin"element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           )}
@@ -93,6 +101,7 @@ function Shell() {
       <TabBar onStart={startFlow} />
       <RestTimer />
       <Modals />
+      {MOBILE && <FirstSyncSheet />}
       <Toast />
     </>
   )
@@ -101,5 +110,7 @@ function Shell() {
 export default function App() {
   const boot = useStore(s => s.boot)
   useEffect(() => { boot() }, [boot])
+  // provider/model from localStorage + whether a key is in secure storage (mobile only)
+  useEffect(() => { if (MOBILE) useAI.getState().load?.() }, [])
   return <HashRouter><Shell /></HashRouter>
 }

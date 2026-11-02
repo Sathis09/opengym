@@ -22,6 +22,14 @@ allprojects {
         google()
         mavenCentral()
     }
+    // @capgo/capacitor-social-login compiles against androidx.browser 1.9.0 (compileOnly, because
+    // the Apple provider is disabled in capacitor.config.json) while its Google dependency
+    // (androidbrowserhelper) pulls 1.4.0 at runtime; Gradle's consistent resolution then fails.
+    // One version for everything fixes it. 1.8.0, not 1.9.0: 1.9.0 requires compileSdk 36 and
+    // this project (AGP 8.7) compiles against 35.
+    configurations.all {
+        resolutionStrategy.force 'androidx.browser:browser:1.8.0'
+    }
 }
 
 task clean(type: Delete) {

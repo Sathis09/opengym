@@ -13,6 +13,14 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Android 15 draws the app edge-to-edge; with adjustMarginsForEdgeToEdge the system
+             bars sit over the window background, so keep it the app's own dark colour and the
+             bar icons light. -->
+        <item name="android:windowBackground">@color/gp_bars</item>
+        <item name="android:statusBarColor">@color/gp_bars</item>
+        <item name="android:navigationBarColor">@color/gp_bars</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 

@@ -4,6 +4,7 @@ import { localTZ } from '../lib/format.js'
 import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED } from '../lib/demo.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
+import { hasData, stampChanges } from '../lib/sync.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -31,11 +32,38 @@ function loadState() {
   return clone(DEF)
 }
 
-const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length)
+const readJSON = k => { try { return JSON.parse(localStorage.getItem(k)) || null } catch { return null } }
 
 export const useStore = create((set, get) => {
   let pushTm = null
   let saveTm = null
+
+  // Gym Plus Google Drive sync (mobile only). The engine and the Google/Drive modules are loaded
+  // lazily behind MOBILE, so none of it reaches a web bundle. See lib/sync-engine.js.
+  let engineP = null
+  let engineRef = null
+  const engine = () => {
+    if (!MOBILE) return Promise.reject(new Error('sync is mobile-only'))
+    if (!engineP) {
+      engineP = Promise.all([
+        import('../lib/sync-engine.js'), import('../lib/google-auth.js'), import('../lib/gdrive.js'),
+      ]).then(([eng, auth, drive]) => {
+        engineRef = eng.createSyncEngine({
+          auth, drive,
+          getState: () => get().S,
+          applyState: S => persist(clone(S), false, true),
+          resetLocal: () => persist(clone(DEF), false),
+          normalize: s => Object.assign(clone(DEF), s),
+          setSync: p => set({ sync: { ...get().sync, ...p } }),
+          setAccount: account => set({ account }),
+          setFirstSync: firstSync => set({ firstSync }),
+        })
+        return engineRef
+      })
+      engineP.catch(() => { engineP = null })
+    }
+    return engineP
+  }
 
   // Mobile build: mirror the state into a file in the app's data directory (survives WebView
   // storage eviction) and keep the native reminder schedule in step with the weekly plan.
@@ -44,8 +72,10 @@ export const useStore = create((set, get) => {
     saveTm = setTimeout(() => { saveTm = null; nativeSave(get().S); syncReminder(get().S) }, 800)
   }
 
-  const persist = (S, push = true) => {
-    S._ts = Date.now()
+  // keepTs: a merged cloud state is applied with its own _ts (the newer of both sides), so
+  // applying it doesn't by itself make this phone's copy look newer than the cloud's.
+  const persist = (S, push = true, keepTs = false) => {
+    if (!keepTs || !S._ts) S._ts = Date.now()
     registerCustom(S.customEx)
     localStorage.setItem(KEY, JSON.stringify(S))
     set({ S })
@@ -54,6 +84,7 @@ export const useStore = create((set, get) => {
       clearTimeout(pushTm)
       pushTm = setTimeout(() => get().pushState(), 1500)
     }
+    if (MOBILE && push && get().account) engine().then(e => e.notifyChange()).catch(() => {})
   }
 
   // A setting changed right before switching away/closing the tab must not get lost mid-debounce
@@ -72,7 +103,26 @@ export const useStore = create((set, get) => {
       pushTm = null
       get().pushState()
     }
+    if (MOBILE && engineRef) engineRef.flush().catch(() => {})
   })
+
+  // Mobile boot: pull+merge in the background if a Google account is connected, sync again
+  // whenever the app comes back to the foreground, flush when it goes to the background, and
+  // retry when the network returns. Listeners are attached once, even when signed out, so a
+  // later sign-in is covered too (each handler is a no-op without an account).
+  let lifecycle = false
+  const startCloudSync = () => {
+    if (!MOBILE || lifecycle) return
+    lifecycle = true
+    window.addEventListener('online', () => {
+      if (get().account) engine().then(e => e.onOnline()).catch(() => {})
+    })
+    import('@capacitor/app').then(({ App }) => App.addListener('appStateChange', ({ isActive }) => {
+      if (!get().account) return
+      engine().then(e => (isActive ? e.sync() : e.flush())).catch(() => {})
+    })).catch(() => {})
+    if (get().account) engine().then(e => e.start()).catch(() => {})
+  }
 
   // Everything a sign-out leaves behind on this device, whichever way it was triggered.
   const clearLocalSession = () => {
@@ -92,13 +142,35 @@ export const useStore = create((set, get) => {
     // the app hangs off it, so an unconfigured instance renders exactly what it always did.
     config: null,
 
+    // Gym Plus (mobile) Google account + Drive sync. Contract: GYMPLUS_TRACKER.md "Store additions".
+    account: MOBILE ? readJSON('gp_account') : null,
+    sync: MOBILE && readJSON('gp_account')
+      ? { state: 'synced', lastAt: readJSON('gp_sync_meta')?.lastAt ?? null, error: null }
+      : { state: 'off', lastAt: null, error: null },
+    firstSync: null,
+
     // Mutate a draft of S via producer fn, then persist + schedule sync.
+    // Mobile: every add/edit/delete in the four synced collections is stamped/tombstoned here
+    // (lib/sync.js stampChanges), so the Drive merge can tell edits and deletions apart.
     update(mut, push = true) {
       const S = clone(get().S)
       mut(S)
+      if (MOBILE) stampChanges(get().S, S)
       persist(S, push)
     },
-    replaceState(S, push = false) { persist(clone(S), push) },
+    replaceState(S, push = false) {
+      const next = clone(S)
+      // push=true means a user action (backup import, "reset everything") — record it as edits
+      // and deletions so the next Drive merge doesn't bring the old data back.
+      if (MOBILE && push) stampChanges(get().S, next)
+      persist(next, push)
+    },
+
+    async googleSignIn() { if (MOBILE) return (await engine()).signIn() },
+    async googleSignOut({ keepLocal = true } = {}) { if (MOBILE) return (await engine()).signOut({ keepLocal }) },
+    async syncNow() { if (MOBILE && get().account) return (await engine()).sync() },
+    async resolveFirstSync(choice) { if (MOBILE) return (await engine()).resolveFirstSync(choice) },
+    async deleteCloudCopy() { if (MOBILE) return (await engine()).deleteCloudCopy() },
 
     isGuest: () => localStorage.getItem('gym_guest') === '1',
     setGuest(v) { if (v) localStorage.setItem('gym_guest', '1'); else localStorage.removeItem('gym_guest'); set({}) },
@@ -161,13 +233,16 @@ export const useStore = create((set, get) => {
         const saved = await nativeLoad()
         const S = get().S
         if (saved && (!hasData(S) || (saved._ts || 0) >= (S._ts || 0))) {
-          persist(Object.assign(clone(DEF), saved), false)
+          // keepTs: restoring the file mirror is not an edit — a fresh _ts would make this
+          // phone's settings look newer than the Drive copy's on every launch.
+          persist(Object.assign(clone(DEF), saved), false, true)
         } else if (hasData(S)) {
           nativeSave(S)   // first run after an update from a file-less version: seed the mirror
         }
         get().setGuest(true)
         syncReminder(get().S)
         set({ ready: true })
+        startCloudSync()   // not awaited — the app opens instantly, offline or not
         return
       }
       // Demo build (GitHub Pages): no backend at all — seed once, stay in guest mode.

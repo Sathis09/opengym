@@ -1,7 +1,7 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
-  "description": "Personal gym & body weight tracker",
+  "name": "Gym Plus",
+  "short_name": "Gym Plus",
+  "description": "Personal gym & body-weight tracker",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

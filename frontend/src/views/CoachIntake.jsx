@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import { useAI } from '../store/useAI.js'
 import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
 import { DAYN } from '../lib/format.js'
@@ -57,8 +58,14 @@ export default function CoachIntake() {
     ...(S.coach?.profile || {})
   }))
   const set = patch => setP(v => ({ ...v, ...patch }))
+  const ai = useAI()
+  useEffect(() => { if (MOBILE) ai.load() }, [])
+  const available = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE, ai })
+  // On mobile the AI settings load asynchronously; don't bounce before they have.
+  const deciding = MOBILE && !ai.ready
+  useEffect(() => { if (!deciding && !available) nav('/home', { replace: true }) }, [available, deciding])
 
-  if (!coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })) { nav('/home', { replace: true }); return null }
+  if (!available) return null
 
   const key = STEPS[step]
   const canNext = key !== 'goal' || (p.goal && p.experience)

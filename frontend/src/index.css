@@ -913,3 +913,44 @@ h4.sec{
   .exmedia img{height:380px}
   .hm-wrap{display:flex;flex-direction:column;align-items:center}
 }
+
+/* ------------------------------------- Gym Plus (mobile): profile + AI -- */
+.gp-av{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;overflow:hidden;
+  border-radius:50%;background:var(--acc-soft);color:var(--acc);font-weight:600;letter-spacing:0;
+}
+.gp-av img{width:100%;height:100%;object-fit:cover;display:block}
+.lrow-i.gp-av{border-radius:50%;background:var(--acc-soft);color:var(--acc)}
+.iconbtn.gp-avbtn{padding:0;overflow:visible;position:relative}
+.iconbtn.gp-avbtn.warn::after{
+  content:'';position:absolute;right:-1px;top:-1px;width:10px;height:10px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 0 2px var(--bg);
+}
+.gp-hero{text-align:center;padding:26px 18px 20px}
+.gp-hero-i{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 14px;font-size:34px;
+  display:flex;align-items:center;justify-content:center;background:var(--acc-soft);color:var(--acc);
+}
+.card h2.gp-hero-t{font-size:22px;font-weight:600;letter-spacing:-.021em;color:var(--label);margin:0 0 8px}
+.gp-hero-p{line-height:1.45;margin:0 auto 18px;max-width:340px}
+.gp-who{display:flex;align-items:center;gap:14px}
+.gp-who-n{font-size:20px;font-weight:600;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gp-who-e{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.gp-inline{display:inline-flex;align-items:center;gap:8px}
+.gp-spin{
+  display:inline-block;width:18px;height:18px;border-radius:50%;flex:none;
+  border:2px solid currentColor;border-right-color:transparent;opacity:.8;
+  animation:gpspin .8s linear infinite;
+}
+.gp-spin.sm{width:14px;height:14px}
+@keyframes gpspin{to{transform:rotate(360deg)}}
+.gp-keyf{display:flex;align-items:center;gap:6px}
+.gp-keyf .field{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px}
+.gp-ok{color:var(--green);display:inline-flex;align-items:center;gap:4px}
+.gp-err{color:var(--red);line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.gp-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;overflow-wrap:anywhere}
+.gp-fs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.gp-fs-side{background:var(--surface);border-radius:var(--r);padding:12px 14px}
+.gp-fs-h{display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:8px;color:var(--acc)}
+.gp-fs-n{font-size:15px;color:var(--label-2);line-height:1.5}
+.gp-fs-n b{color:var(--label);font-weight:600}

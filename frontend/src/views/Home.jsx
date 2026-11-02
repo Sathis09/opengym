@@ -9,16 +9,35 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import { coachAvailable, hasConsent } from '../lib/coach.js'
-import { useCoachStatus } from '../lib/coach-api.js'
+import { coachAvailable, hasConsent, reviewDue } from '../lib/coach.js'
+import { useCoachStatus, requestReview } from '../lib/coach-api.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
+import { useAI } from '../store/useAI.js'
+import { Avatar, syncStatusText } from './Profile.jsx'
 
 // A job in flight or a proposal waiting is the only reason the Coach interrupts Home. When it
 // has nothing to say it renders nothing at all — and it only polls while Home is on screen.
 function CoachCard({ nav }) {
   const S = useStore(s => s.S)
-  const { job, pending } = useCoachStatus(hasConsent(S))
+  const { job, pending, refresh } = useCoachStatus(hasConsent(S))
+  // On the phone there is no server to run the weekly review on schedule, so when it falls
+  // due Home offers it instead; one tap starts it with the user's own provider.
+  if (MOBILE && hasConsent(S) && !job && !pending && reviewDue(S)) {
+    const start = async () => { try { await requestReview(''); refresh() } catch { /* the Coach screen shows the error */ } nav('/coach') }
+    return <div className="card" style={{ borderColor: 'var(--acc)' }}>
+      <div className="today-row" onClick={start}>
+        <div className="row" style={{ gap: 9, minWidth: 0 }}>
+          <span className="lrow-i" style={{ background: 'var(--acc)' }}><Icon name="sparkles" /></span>
+          <div style={{ minWidth: 0 }}>
+            <div className="lbl2">{t('Coach')}</div>
+            <div className="ttl">{t('Your weekly review is ready to generate')}</div>
+          </div>
+        </div>
+        <span className="tag acc">{t('Start')}</span>
+      </div>
+    </div>
+  }
   if (!hasConsent(S) || (!job && !pending)) return null
   const ready = !!pending
   return <div className="card" style={ready ? { borderColor: 'var(--acc)' } : null}>
@@ -46,7 +65,10 @@ export default function Home() {
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
   const [weekOffset, setWeekOffset] = useState(0)
-  const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })
+  const account = useStore(s => s.account)
+  const sync = useStore(s => s.sync)
+  const ai = useAI()
+  const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE, ai })
 
   const today = new Date()
   const routine = effectiveRoutine(S, todayISO())
@@ -78,8 +100,19 @@ export default function Home() {
 
   return <div className="narrow">
     <div className="hdr">
-      <div><h1>{user ? t('Hi {0}', user.name) : 'openGym'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
-      <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
+      <div><h1>{user ? t('Hi {0}', user.name) : 'Gym Plus'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
+      {MOBILE ? (
+        <div className="row" style={{ gap: 8 }}>
+          {/* Gym Plus: Google backup + AI settings live behind the avatar */}
+          <button className={'iconbtn gp-avbtn' + (account && (sync?.state === 'error' || sync?.state === 'auth') ? ' warn' : '')}
+            onClick={() => nav('/profile')} aria-label={t('Profile')} title={syncStatusText(account, sync)}>
+            <Avatar account={account} size={36} />
+          </button>
+          <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
+        </div>
+      ) : (
+        <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
+      )}
     </div>
 
     <div className="card">

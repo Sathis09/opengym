@@ -39,10 +39,40 @@ const coachOf = s => (s.coach = s.coach || emptyCoach())
 // The demo build is the one exception, and it is deliberate: it has no backend and no
 // account, but it does have a canned provider (lib/coach-demo.js), and hiding the app's most
 // interesting feature from the page people are sent to look at it on would be a strange
-// choice. The mobile build stays out — there is no server there to fake anything with.
-export const coachAvailable = (config, user, { demo, mobile } = {}) =>
-  mobile ? false : demo ? true : !!(config?.coach?.enabled && user)
+// choice. The mobile build has no server either; there the Coach calls the user's own AI
+// provider with their own key (lib/coach-local.js), so it is available once a key and a model
+// are set (`ai` is the useAI store state).
+export const coachAvailable = (config, user, { demo, mobile, ai } = {}) =>
+  mobile ? !!(ai?.hasKey && ai?.model) : demo ? true : !!(config?.coach?.enabled && user)
 export const hasConsent = S => !!S?.coach?.consent?.agreedAt && S.coach.consent.version === CONSENT_VERSION
+
+/**
+ * Is a scheduled review due? The phone has no server ticking a cadence, so the app asks this
+ * instead and offers "your weekly review is ready to generate" — the user starts it.
+ *
+ * Same rules as api/coach/cadence.js isDue, except that a weekly slot stays due from the chosen
+ * day and time until a review happens, rather than only within that one minute.
+ */
+export function reviewDue(S, now = new Date()) {
+  const coach = S?.coach
+  if (!coach || !hasConsent(S)) return false
+  const cadence = coach.cadence
+  if (!cadence || cadence === 'off') return false
+  const lastAt = coach.lastReview?.at ? new Date(coach.lastReview.at).getTime() || 0 : 0
+  const lastDay = lastAt ? new Date(lastAt).toISOString().slice(0, 10) : ''
+  const since = (S.workouts || []).filter(w => !lastAt || (w.end || 0) > lastAt || w.d > lastDay)
+  if (!since.length) return false
+  if (cadence.everyWorkouts) return since.length >= Math.max(1, Math.min(20, cadence.everyWorkouts))
+  if (cadence.weekly) {
+    const [hh, mm] = String(cadence.weekly.time || '18:00').split(':').map(Number)
+    const slot = new Date(now)
+    slot.setHours(hh || 0, mm || 0, 0, 0)
+    slot.setDate(slot.getDate() - ((slot.getDay() - (cadence.weekly.day ?? 0) + 7) % 7))
+    if (slot > now) slot.setDate(slot.getDate() - 7)
+    return lastAt < slot.getTime()
+  }
+  return false
+}
 
 /* ============================ plan fingerprint ============================ */
 

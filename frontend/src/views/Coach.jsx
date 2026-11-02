@@ -6,12 +6,14 @@ import { t } from '../lib/i18n.js'
 import { fmtDate } from '../lib/format.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
+import { useAI } from '../store/useAI.js'
 import {
   coachAvailable, hasConsent, CONSENT_VERSION, emptyCoach,
-  canRevert, revertLast, changeTitle, recordDismissal
+  canRevert, revertLast, changeTitle, recordDismissal, reviewDue
 } from '../lib/coach.js'
 import {
-  useCoachStatus, requestReview, resolvePending, forgetCoach, disclosure, JOB_ERRORS
+  useCoachStatus, requestReview, resolvePending, forgetCoach, disclosure, JOB_ERRORS,
+  dismissCoachNotice, jobErrorText
 } from '../lib/coach-api.js'
 import { confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
@@ -42,12 +44,17 @@ export default function Coach() {
   const toast = useUI(s => s.toast)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const { job, pending, cap, refresh } = useCoachStatus(true)
+  const { job, pending, cap, error, notice, refresh } = useCoachStatus(true)
+  const ai = useAI()
 
   // Gating lives in one predicate; if the instance isn't offering the Coach this route simply
-  // isn't a place you can be.
-  useEffect(() => { if (!coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })) nav('/home', { replace: true }) }, [config, user])
-  if (!coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })) return null
+  // isn't a place you can be. On mobile the AI settings load asynchronously, so wait for them
+  // before deciding.
+  useEffect(() => { if (MOBILE) ai.load() }, [])
+  const available = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE, ai })
+  const deciding = MOBILE && !ai.ready
+  useEffect(() => { if (!deciding && !available) nav('/home', { replace: true }) }, [config, user, available, deciding])
+  if (!available) return null
 
   const consented = hasConsent(S)
   const coach = S.coach || emptyCoach()
@@ -99,9 +106,13 @@ export default function Coach() {
       ? <ConsentCard onDone={() => refresh()} />
       : <>
         <StatusCard job={job} pending={pending} nav={nav} />
+        {!job && <NoticeCard error={error} notice={notice} refresh={refresh} />}
 
         {!job && !pending && <div className="card">
           <h2 style={{ margin: '0 0 6px' }}>{t('Ask for a review')}</h2>
+          {MOBILE && reviewDue(S) && <div className="small" style={{ color: 'var(--acc)', marginBottom: 6 }}>
+            {t('Your scheduled review is ready to generate.')}
+          </div>}
           <div className="muted small" style={{ marginBottom: 10 }}>
             {t('The Coach reads what you have actually logged since its last look and suggests changes to your plan — each one with its reason.')}
           </div>
@@ -162,8 +173,11 @@ function ConsentCard({ onDone }) {
   const open = () => openSheet(close => <>
     <h3>{t('Before the Coach starts')}</h3>
     <div className="muted small" style={{ lineHeight: 1.5, marginBottom: 12 }}>
-      {t('When you ask for a plan or a review, this instance sends the following to {0}, running on this server under the instance owner’s account.',
-        info?.providerLabel || config?.coach?.providerLabel || t('the configured AI provider'))}
+      {MOBILE
+        ? t('When you ask for a plan or a review, this phone sends the following directly to {0}, using your own API key. The provider’s own terms apply to what it receives.',
+          info?.providerLabel || t('your AI provider'))
+        : t('When you ask for a plan or a review, this instance sends the following to {0}, running on this server under the instance owner’s account.',
+          info?.providerLabel || config?.coach?.providerLabel || t('the configured AI provider'))}
     </div>
     <div className="sect-b">
       {(info?.categories || Object.keys(CATEGORY_TEXT)).map(k => {
@@ -192,7 +206,9 @@ function ConsentCard({ onDone }) {
       <div className="big" style={{ fontSize: 20 }}>{t('Meet the Coach')}</div>
     </div>
     <div className="muted small" style={{ marginBottom: 12, lineHeight: 1.5 }}>
-      {t('An AI coach that can design your plan and adjust it from what you actually log. It runs on this server, it never changes anything without your say-so, and it is off until you turn it on.')}
+      {MOBILE
+        ? t('An AI coach that can design your plan and adjust it from what you actually log. It uses your own AI provider and key, it never changes anything without your say-so, and it is off until you turn it on.')
+        : t('An AI coach that can design your plan and adjust it from what you actually log. It runs on this server, it never changes anything without your say-so, and it is off until you turn it on.')}
     </div>
     <Button variant="primary" icon="sparkles" onClick={open}>{t('See what it would use')}</Button>
   </div>
@@ -229,6 +245,28 @@ function StatusCard({ job, pending, nav }) {
   return null
 }
 
+/* What the last job came back with when that wasn't a proposal: a failure, or a review that
+   found nothing to change. Only the mobile build reports these (the server keeps them in its
+   own history); elsewhere both are always null and this renders nothing. */
+function NoticeCard({ error, notice, refresh }) {
+  if (!error && !notice) return null
+  const dismiss = async () => { try { await dismissCoachNotice() } catch { /* nothing to undo */ } refresh() }
+  const isError = !!error
+  return <div className="card" style={{ borderColor: isError ? 'var(--red)' : 'var(--acc)' }}>
+    <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+      <span className="lrow-i" style={{ '--tint': isError ? 'var(--red)' : 'var(--acc)' }}><Icon name={isError ? 'info' : 'check'} /></span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600 }}>{isError ? t('The Coach couldn’t finish') : t('Nothing worth changing')}</div>
+        <div className="muted small" style={{ lineHeight: 1.45, marginTop: 2 }}>
+          {isError ? t(jobErrorText(error.code)) : (notice.reading || t('The Coach read your recent training and found no reason to change the plan.'))}
+        </div>
+      </div>
+    </div>
+    <div style={{ height: 10 }} />
+    <Button onClick={dismiss}>{t('OK')}</Button>
+  </div>
+}
+
 /* ---------------------------------- cadence ---------------------------------- */
 
 function CadenceCard({ coach, update }) {
@@ -243,7 +281,9 @@ function CadenceCard({ coach, update }) {
   return <Section title={t('Automatic reviews')}
     footer={mode === 'off'
       ? t('Off — the Coach only looks when you ask it to.')
-      : t('You are only notified when the Coach actually has something to suggest.')}>
+      : MOBILE
+        ? t('When a review is due, the app offers it to you — it runs when you start it.')
+        : t('You are only notified when the Coach actually has something to suggest.')}>
     <SelectRow icon="clock" iconTint="var(--purple)" title={t('When')}
       value={mode} onChange={setMode}
       options={[

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="160" viewBox="0 0 560 160" role="img" aria-label="Gym Plus">
+  <!-- Gym Plus wordmark (mark + name). Based on openGym by Duarte Santos (AGPL-3.0). -->
+  <rect width="560" height="160" rx="28" fill="#0c0e12"/>
+  <g transform="translate(24 16) scale(0.25)">
+    <rect width="512" height="512" rx="112" fill="#151922"/>
+    <g fill="#a3e635">
+    <!-- dumbbell: handle (horizontal arm of the plus) -->
+    <rect x="150" y="216" width="212" height="80" rx="10"/>
+    <!-- plates, left (inner, outer) -->
+    <rect x="124" y="176" width="40" height="160" rx="14"/>
+    <rect x="94" y="204" width="24" height="104" rx="10"/>
+    <!-- plates, right (inner, outer) -->
+    <rect x="348" y="176" width="40" height="160" rx="14"/>
+    <rect x="394" y="204" width="24" height="104" rx="10"/>
+    <!-- vertical arm of the plus -->
+    <rect x="216" y="96" width="80" height="320" rx="26"/>
+  </g>
+  </g>
+  <text x="172" y="101" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="64" font-weight="800" letter-spacing="-1.5"><tspan fill="#eef1f6">Gym</tspan><tspan fill="#a3e635" dx="14">Plus</tspan></text>
+</svg>

@@ -9,6 +9,7 @@ import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { coachAvailable } from '../lib/coach.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
+import { useAI } from '../store/useAI.js'
 
 export default function Plan() {
   const nav = useNavigate()
@@ -16,7 +17,8 @@ export default function Plan() {
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
   const update = useStore(s => s.update)
-  const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })
+  const ai = useAI()
+  const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE, ai })
 
   const addRoutine = () => {
     const r = { id: uid(), name: t('New routine'), emoji: DEFAULT_GLYPH, ex: [] }

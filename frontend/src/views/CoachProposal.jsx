@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import { useAI } from '../store/useAI.js'
 import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
 import { fmtDate } from '../lib/format.js'
@@ -33,8 +34,12 @@ export default function CoachProposal() {
   const update = useStore(s => s.update)
   const toast = useUI(s => s.toast)
   const { pending, loading, refresh } = useCoachStatus(true)
+  const ai = useAI()
 
-  useEffect(() => { if (!coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })) nav('/home', { replace: true }) }, [config, user])
+  useEffect(() => { if (MOBILE) ai.load() }, [])
+  const available = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE, ai })
+  const deciding = MOBILE && !ai.ready
+  useEffect(() => { if (!deciding && !available) nav('/home', { replace: true }) }, [config, user, available, deciding])
   useEffect(() => { if (!loading && !pending) nav('/coach', { replace: true }) }, [loading, pending])
   if (!pending) return null
 

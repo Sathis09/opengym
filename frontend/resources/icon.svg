@@ -1,13 +1,21 @@
+<!-- Gym Plus app mark (original artwork for Gym Plus, a fork of openGym — AGPL-3.0).
+     A rounded plus whose horizontal arm is a dumbbell. Lime #a3e635 on #0c0e12.
+     Native icons/splash: render resources/icon.png + splash.png, then
+     `npx @capacitor/assets generate --ios --android ...` — see docs/MOBILE.md. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
-  <!-- App-icon source == the PWA icon (public/icon-512.png), geometry traced 1:1 so the
-       native app, the home-screen PWA and the website favicon all show the same icon.
-       Generate platform icons + splash via `npx @capacitor/assets generate` — docs/MOBILE.md. -->
-  <rect width="512" height="512" fill="#0c0e12"/>
+  <rect width="512" height="512" rx="112" fill="#0c0e12"/>
+  <g>
   <g fill="#a3e635">
-    <rect x="80" y="242" width="352" height="28"/>
-    <rect x="80" y="199" width="36" height="114"/>
-    <rect x="131" y="169" width="47" height="174"/>
-    <rect x="334" y="169" width="47" height="174"/>
-    <rect x="396" y="199" width="36" height="114"/>
+    <!-- dumbbell: handle (horizontal arm of the plus) -->
+    <rect x="150" y="216" width="212" height="80" rx="10"/>
+    <!-- plates, left (inner, outer) -->
+    <rect x="124" y="176" width="40" height="160" rx="14"/>
+    <rect x="94" y="204" width="24" height="104" rx="10"/>
+    <!-- plates, right (inner, outer) -->
+    <rect x="348" y="176" width="40" height="160" rx="14"/>
+    <rect x="394" y="204" width="24" height="104" rx="10"/>
+    <!-- vertical arm of the plus -->
+    <rect x="216" y="96" width="80" height="320" rx="26"/>
+  </g>
   </g>
 </svg>

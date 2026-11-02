@@ -8,6 +8,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { api } from './api.js'
 import { DEMO } from './demo.js'
+import { MOBILE } from './mobile.js'
+import { MOBILE_JOB_ERRORS } from './coach-core/errors.js'
 import { useStore } from '../store/useStore.js'
 
 const POLL_MS = 3000        // a job is running: often enough to feel live
@@ -19,15 +21,23 @@ const IDLE_MS = 60000       // a Coach screen is open but nothing is running
 // is imported dynamically so none of it lands in a self-hosted bundle.
 let demoMod = null
 const demo = async () => (demoMod = demoMod || await import('./coach-demo.js'))
+// The mobile build has no backend either, but it has the user's own AI key: lib/coach-local.js
+// runs the whole job on the phone and answers these calls with real proposals. Same dynamic
+// import, so none of it lands in a web bundle.
+let localMod = null
+const local = async () => (localMod = localMod || await import('./coach-local.js'))
 const S = () => useStore.getState().S
+const markReviewed = () => useStore.getState().update(s => { if (s.coach) s.coach.lastReview = { at: Date.now() } })
 
-export const coachStatus = async () => DEMO ? (await demo()).demoStatus() : api('/api/coach/status')
-export const requestReview = async note => DEMO ? (await demo()).demoReview(S()) : api('/api/coach/review', { method: 'POST', body: JSON.stringify({ note: note || '' }) })
-export const requestPlan = async intake => DEMO ? (await demo()).demoPlan(S(), intake) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ intake }) })
-export const refinePlan = async text => DEMO ? (await demo()).demoRefine(S()) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ refine: text }) })
-export const resolvePending = async body => DEMO ? (await demo()).demoResolve() : api('/api/coach/pending/resolve', { method: 'POST', body: JSON.stringify(body) })
-export const forgetCoach = async () => DEMO ? (await demo()).demoResolve() : api('/api/coach/forget', { method: 'POST', body: '{}' })
-export const disclosure = async () => DEMO ? (await demo()).demoDisclosure() : api('/api/coach/disclosure')
+export const coachStatus = async () => DEMO ? (await demo()).demoStatus() : MOBILE ? (await local()).localStatus() : api('/api/coach/status')
+export const requestReview = async note => DEMO ? (await demo()).demoReview(S()) : MOBILE ? (await local()).localReview(S(), note, { onReviewed: markReviewed }) : api('/api/coach/review', { method: 'POST', body: JSON.stringify({ note: note || '' }) })
+export const requestPlan = async intake => DEMO ? (await demo()).demoPlan(S(), intake) : MOBILE ? (await local()).localPlan(S(), intake) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ intake }) })
+export const refinePlan = async text => DEMO ? (await demo()).demoRefine(S()) : MOBILE ? (await local()).localRefine(S(), text) : api('/api/coach/plan', { method: 'POST', body: JSON.stringify({ refine: text }) })
+export const resolvePending = async body => DEMO ? (await demo()).demoResolve() : MOBILE ? (await local()).localResolve() : api('/api/coach/pending/resolve', { method: 'POST', body: JSON.stringify(body) })
+export const forgetCoach = async () => DEMO ? (await demo()).demoResolve() : MOBILE ? (await local()).localForget() : api('/api/coach/forget', { method: 'POST', body: '{}' })
+export const disclosure = async () => DEMO ? (await demo()).demoDisclosure() : MOBILE ? (await local()).localDisclosure() : api('/api/coach/disclosure')
+/** Mobile only: acknowledge a failed job or a "nothing to change" review. A no-op elsewhere. */
+export const dismissCoachNotice = async () => (!DEMO && MOBILE) ? (await local()).localDismiss() : { ok: true }
 
 /**
  * Live job/proposal state.
@@ -82,3 +92,8 @@ export const JOB_ERRORS = {
   nostate: 'The Coach couldn’t read your training data.',
   internal: 'Something went wrong on the server.'
 }
+export { MOBILE_JOB_ERRORS }
+
+/** The English text for a job error code, in the wording that fits this build (pass it to t()). */
+export const jobErrorText = code =>
+  (MOBILE ? MOBILE_JOB_ERRORS : JOB_ERRORS)[code] || (MOBILE ? MOBILE_JOB_ERRORS.internal : JOB_ERRORS.internal)

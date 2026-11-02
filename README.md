@@ -1,45 +1,44 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="openGym" width="720">
+<img src="assets/gymplus-wordmark.svg" alt="Gym Plus" width="420">
 
 <br>
 
-**A self-hosted gym & body-weight tracker you actually own.**
+**A mobile gym & body-weight tracker you actually own.**
 
 Plan your week, run guided workouts, track every set and your body weight over time —
-on your phone, synced across devices, behind your own passkey login.
-No account on someone else's server, no subscription, no ads. Just `docker compose up`.
+on your phone, fully offline. Optionally sync through **your own Google Drive** and get an
+**AI coach that runs on your own API key** (OpenAI, Claude, Gemini, Groq or OpenRouter).
+No account on someone else's server, no subscription, no ads.
 
 <br>
 
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-a3e635?style=flat-square)](LICENSE)
-![Self-hosted](https://img.shields.io/badge/self--hosted-%F0%9F%8F%A0-60a5fa?style=flat-square)
-![PWA](https://img.shields.io/badge/PWA-installable-a78bfa?style=flat-square)
+![Android](https://img.shields.io/badge/Android-Capacitor-3ddc84?style=flat-square)
+![iOS](https://img.shields.io/badge/iOS-Capacitor-60a5fa?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-38bdf8?style=flat-square&logo=react&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![No tracking](https://img.shields.io/badge/telemetry-none-f472b6?style=flat-square)
-<br>
-![GitHub last commit](https://img.shields.io/github/last-commit/DuarteSantos8/openGym?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/issues)
 
 </div>
 
 <br>
 
-> ### 🤖 This is a fork — it adds the AI Coach
+> ### Gym Plus is based on openGym
 >
-> A fork of [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym) that adds one
-> optional feature: an AI that **designs** your training plan and **revises it from what you
-> actually log**, running on your own server under your own provider account.
+> **Gym Plus is based on [openGym](https://github.com/DuarteSantos8/openGym) by Duarte Santos (AGPL-3.0).**
+> It keeps openGym's tracker (and this repo's optional self-hosted AI Coach) and adds a
+> mobile-first app — package / bundle id `com.gympulse.app` — with:
 >
-> Everything else is upstream openGym. With the Coach switched off, this is byte-for-byte the
-> app it forked from.
+> - **Optional Google sign-in + Drive sync** — local-first; your log is stored as
+>   `gymplus-data.json` in a visible **Gym Plus** folder in *your own* Google Drive
+>   (`drive.file` scope only). Without sign-in the app works fully offline, exactly as before.
+> - **Bring-your-own-key AI coach** — pick OpenAI, Anthropic (Claude), Google Gemini, Groq or
+>   OpenRouter and a model; the key stays in the phone's Keychain / Keystore, never synced.
 >
-> **→ [What it does and how to use it](docs/AI_COACH.md)** ·
-> [Claude setup](Claude-setup-instructions.md) ·
-> [ChatGPT / Codex setup](ChatGPT-setup-instructions.md) ·
-> [design deck (PDF)](openGym_AI_Strategy.pdf)
+> Mobile build: **[docs/MOBILE.md](docs/MOBILE.md)** · Google sign-in setup:
+> **[docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)** · self-hosted AI Coach:
+> **[docs/AI_COACH.md](docs/AI_COACH.md)** ([Claude setup](Claude-setup-instructions.md) ·
+> [ChatGPT / Codex setup](ChatGPT-setup-instructions.md) · [design deck (PDF)](openGym_AI_Strategy.pdf))
 
 <br>
 
@@ -51,27 +50,30 @@ No account on someone else's server, no subscription, no ads. Just `docker compo
 <td align="center"><img src="assets/screenshots/stats.png" alt="Stats" width="230"><br><sub><b>Stats</b> — heatmap, charts & PRs</sub></td>
 </tr>
 </table>
+<sub>Screenshots are from upstream openGym; the Gym Plus training screens are the same.</sub>
 </div>
 
 <div align="center">
 
-### [🌐 opengym.duarte-santos.ch](https://opengym.duarte-santos.ch) · [▶ Try the live demo](https://duartesantos8.github.io/openGym/)
+### Upstream openGym: [🌐 opengym.duarte-santos.ch](https://opengym.duarte-santos.ch) · [▶ live demo](https://duartesantos8.github.io/openGym/)
 
-No signup, nothing to install — it runs entirely in your browser on example data.<br>
-<sub>There's no server behind the demo, so passkey sign-in, sync across devices and the
-admin dashboard only exist in a self-hosted instance.</sub>
+The upstream demo runs entirely in your browser on example data (it is openGym, not Gym Plus —
+no Drive sync or bring-your-own-key coach).
 
 </div>
 
 ## Why
 
 Most workout apps lock your data behind a login on their servers, nag you to upgrade, or
-disappear when the startup does. openGym is the opposite: **it runs on your box, your data
-stays in a folder you control, and it's yours to fork.** It still feels modern — installable
-as a home-screen app, passkey sign-in, offline support, sync across your phone and laptop.
+disappear when the startup does. Gym Plus (like openGym before it) is the opposite: **your data
+stays on your phone, in your own Google Drive, or on a box you run — and it's yours to fork.**
+It still feels modern — native app, offline support, optional sync, and an AI coach that
+answers to your own API key instead of a subscription.
 
 ## Features
 
+- ☁️ **Google Drive sync (optional, mobile)** — sign in with Google and your log syncs, local-first, to a **Gym Plus** folder in your own Drive; changes are pushed automatically and pulled on launch/resume. Skip sign-in and nothing leaves the phone
+- 🧠 **Bring-your-own-key AI coach (mobile)** — the Coach talks directly to OpenAI, Anthropic (Claude), Google Gemini, Groq or OpenRouter with your key and the model you pick, plus your own standing instructions. The key lives only in the phone's secure storage
 - ⚖️ **Body-weight tracking** — interactive chart with a goal line you set, gains/losses colored by whether they move toward it
 - 🏋️ **Weekly plan** — a routine per weekday, over a library of **1,324 exercises** (searchable, with animated demos)
 - 🗓️ **Reschedule any day** — sick, missed a session, or fewer gym days this week? Move a workout to another day without touching your weekly plan
@@ -96,14 +98,17 @@ as a home-screen app, passkey sign-in, offline support, sync across your phone a
 - 🌍 **12 languages** — full UI translation (EN, DE, ES, FR, IT, PT, PL, TR, RU, ZH, KO, HI); exercise instructions localized in 10 of them, loaded on demand so the app stays fast
 - 📥 **Bring your history with you** — import from **FitNotes** (Android and iOS), **Strong** and **Hevy**, or body weight straight out of an **Apple Health** export. Exercise names are matched against the library and anything unrecognised becomes one of your own exercises, so nothing in the file is dropped
 - 📦 **Yours to keep** — one-tap JSON export/import, guest mode, **no telemetry**
-- 📱 **Standalone Android app** — the whole tracker as a sideloadable APK: no account, no server, data on the phone, native workout reminders ([download](https://opengym.duarte-santos.ch))
+- 📱 **Native Android & iOS app** — the whole tracker as a Capacitor app (`com.gympulse.app`): no account required, data on the phone, native workout reminders — see [docs/MOBILE.md](docs/MOBILE.md)
 
 ## Quick start (self-host)
 
 You need [Docker](https://docs.docker.com/get-docker/) with Compose.
 
+From a checkout of this repository (the clone below is the **upstream openGym** repo — use
+the Gym Plus repository URL instead if you want the Gym Plus additions):
+
 ```bash
-git clone https://github.com/DuarteSantos8/openGym
+git clone https://github.com/DuarteSantos8/openGym   # upstream openGym
 cd openGym
 cp .env.example .env
 docker compose pull   # grab prebuilt images (amd64 + arm64) — skip to build from source instead
@@ -120,16 +125,17 @@ a build step locally either way.
 
 ## Mobile app (no server at all)
 
-The same codebase also builds a **standalone mobile app** (Capacitor): no account, no sync,
-no backend — everything stays on the phone, with native workout-day reminders and share-sheet
-backups. Self-hosting gets you multi-device sync and profiles for friends & family; the
-mobile app is the install-and-done flavor.
+The same codebase builds **Gym Plus**, a standalone mobile app (Capacitor, app id
+`com.gympulse.app`): no backend — everything stays on the phone, with native workout-day
+reminders and share-sheet backups. On top of that, two optional extras that only exist in
+the mobile build: **Google sign-in with Drive sync** and the **bring-your-own-key AI coach**.
+Self-hosting gets you passkey profiles for friends & family and the server-side AI Coach.
 
-- **Android:** [**download the APK**](https://opengym.duarte-santos.ch) and sideload it —
-  openGym is deliberately not on the Play Store. Or build it yourself: **[docs/MOBILE.md](docs/MOBILE.md)**.
-- **iPhone:** Apple doesn't allow installing apps outside the App Store, so there is no iOS
-  download. Self-host and add it to your home screen from Safari (it's a full PWA), or build
-  the native app onto your own device from Xcode — see **[docs/MOBILE.md](docs/MOBILE.md)**.
+- **Android:** build the APK yourself — **[docs/MOBILE.md](docs/MOBILE.md)**. (The APK on the
+  upstream site, opengym.duarte-santos.ch, is the original **openGym** app, not Gym Plus.)
+- **iPhone:** build the native app onto your own device from Xcode — see
+  **[docs/MOBILE.md](docs/MOBILE.md)** — or self-host and add it to your home screen from Safari.
+- **Google sign-in:** needs your own OAuth client ids — **[docs/GOOGLE_SETUP.md](docs/GOOGLE_SETUP.md)**.
 
 ## How it works
 
@@ -183,7 +189,9 @@ walkthroughs for [Claude](Claude-setup-instructions.md) and [ChatGPT/Codex](Chat
 
 Rough, community-driven — ideas and PRs welcome:
 
-- [x] Standalone mobile app — Android APK to sideload ([download](https://opengym.duarte-santos.ch)); on iOS as a self-hosted PWA (no store listings planned)
+- [x] Standalone mobile app — Android & iOS (Capacitor), built from source ([docs/MOBILE.md](docs/MOBILE.md))
+- [x] Optional Google sign-in with sync to your own Google Drive (mobile)
+- [x] Bring-your-own-key AI coach: OpenAI, Claude, Gemini, Groq, OpenRouter (mobile)
 - [x] Automatic progression programs (linear, Greyskull LP, double progression) with stalls and deloads
 - [x] Estimated 1RM per exercise
 - [ ] Percentage / training-max programming (5/3/1-style) on top of the progression engine
@@ -207,7 +215,10 @@ lives in pure functions under `frontend/src/lib/` with tests next to them: `npm 
 `frontend/`. Vitest is a dev dependency; the app itself ships no runtime dependencies beyond
 React, the router and Zustand.
 
-## Community
+## Community (upstream openGym)
+
+These links go to the **upstream openGym** project by Duarte Santos — use them for questions
+about the shared tracker core, not for Gym Plus-specific features (Drive sync, BYOK coach).
 
 - **[Q&A](https://github.com/DuarteSantos8/openGym/discussions/categories/q-a)** — self-hosting
   help, passkey/login trouble, "how do I…". Most login problems turn out to be an `RP_ID`/`ORIGIN`
@@ -224,14 +235,19 @@ React, the router and Zustand.
 Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues: more starter
 plans, exercise-data languages, import from other trackers. **A ⭐ helps more people find it.**
 
-openGym is free and stays free: AGPL, no subscription, no paid tier, nothing held back for
-sponsors. If it replaced a paid tracker for you and you want to chip in, the Sponsor button at the
-top of the page is there — a star, a bug report or a PR is worth just as much.
+Gym Plus, like openGym, is free and stays free: AGPL, no subscription, no paid tier. If it
+replaced a paid tracker for you, consider supporting the upstream
+[openGym](https://github.com/DuarteSantos8/openGym) project it is built on — a star, a bug report
+or a PR there is worth a lot.
 
 ## License
 
 [GNU AGPL v3.0](LICENSE) — free and open source. You can self-host, use, modify and share it;
 if you run a modified version as a network service, you must offer that version's source under
-the same license. Nobody can turn openGym into a closed, proprietary product.
+the same license. Nobody can turn Gym Plus (or openGym) into a closed, proprietary product.
+
+**Gym Plus is based on openGym by Duarte Santos (AGPL-3.0)** —
+<https://github.com/DuarteSantos8/openGym>. Original copyright notices are kept in the source;
+the Gym Plus logo is original artwork for this fork.
 
 Exercise images/GIFs are fetched from the upstream dataset and keep their own terms — see [NOTICE.md](NOTICE.md).
